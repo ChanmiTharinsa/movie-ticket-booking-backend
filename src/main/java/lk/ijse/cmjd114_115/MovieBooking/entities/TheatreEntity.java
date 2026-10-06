@@ -13,7 +13,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import lk.ijse.cmjd114_115.MovieBooking.dto.enums.TheatreStatus;
 import lombok.Data;
 
@@ -31,15 +30,11 @@ public class TheatreEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(length = 1000)
+    @Column(nullable = false)
     private String location;
 
     @Column(nullable = false)
     private int capacity;
-
-    private String language;
-    private String genre;
-    private LocalDate releaseDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
