@@ -12,7 +12,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
-
 import lk.ijse.cmjd114_115.MovieBooking.dto.enums.TheatreStatus;
 import lombok.Data;
 
