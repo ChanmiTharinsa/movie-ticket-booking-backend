@@ -4,15 +4,9 @@
  */
 package lk.ijse.cmjd114_115.MovieBooking.entities;
 
-/**
- *
- * @author User
- */
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import lk.ijse.cmjd114_115.MovieBooking.dto.enums.BookingStatus;
 import lk.ijse.cmjd114_115.MovieBooking.dto.enums.PaymentMethod;
 import lk.ijse.cmjd114_115.MovieBooking.dto.enums.PaymentStatus;
 import lombok.AllArgsConstructor;

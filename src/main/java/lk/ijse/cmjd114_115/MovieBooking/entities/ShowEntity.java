@@ -5,6 +5,7 @@
 package lk.ijse.cmjd114_115.MovieBooking.entities;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import lombok.AllArgsConstructor;
@@ -43,8 +44,8 @@ public class ShowEntity {
     @Column(nullable = false)
     private LocalTime showTime;
 
-    @Column(nullable = false)
-    private int ticketPrice;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal ticketPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

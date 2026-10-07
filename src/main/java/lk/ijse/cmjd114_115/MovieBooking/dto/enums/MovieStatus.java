@@ -11,7 +11,7 @@ package lk.ijse.cmjd114_115.MovieBooking.dto.enums;
 public enum MovieStatus {
     
     UPCOMING,
-    NOWSHOWING,
+    NOW_SHOWING,
     ENDED
     
 }
