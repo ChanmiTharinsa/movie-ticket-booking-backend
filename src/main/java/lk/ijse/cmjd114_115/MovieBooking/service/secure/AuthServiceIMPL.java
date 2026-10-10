@@ -2,10 +2,14 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package lk.ijse.cmjd114_115.MovieBooking.dto.secure;
+package lk.ijse.cmjd114_115.MovieBooking.service.secure;
 
+import lk.ijse.cmjd114_115.MovieBooking.service.secure.AuthService;
 import lk.ijse.cmjd114_115.MovieBooking.dao.UserDao;
 import lk.ijse.cmjd114_115.MovieBooking.dto.enums.Role;
+import lk.ijse.cmjd114_115.MovieBooking.dto.secure.JWTResponseDTO;
+import lk.ijse.cmjd114_115.MovieBooking.dto.secure.SignInDTO;
+import lk.ijse.cmjd114_115.MovieBooking.dto.secure.SignUpDTO;
 import lk.ijse.cmjd114_115.MovieBooking.entities.UserEntity;
 import lk.ijse.cmjd114_115.MovieBooking.exceptions.DataNotFoundException;
 import lk.ijse.cmjd114_115.MovieBooking.exceptions.DuplicateDataException;
