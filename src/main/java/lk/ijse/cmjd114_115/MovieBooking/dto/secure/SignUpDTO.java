@@ -1,0 +1,31 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package lk.ijse.cmjd114_115.MovieBooking.dto.secure;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import java.io.Serializable;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ *
+ * @author User
+ */
+@Data 
+@AllArgsConstructor 
+@NoArgsConstructor
+
+public class SignUpDTO implements Serializable {
+    @NotBlank(message = "First name is required")
+    private String firstName;
+    private String lastName;
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be valid")
+    private String email;
+    @NotBlank(message = "Password is required")
+    private String password;
+}
