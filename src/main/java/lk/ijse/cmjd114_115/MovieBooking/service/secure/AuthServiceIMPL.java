@@ -4,7 +4,6 @@
  */
 package lk.ijse.cmjd114_115.MovieBooking.service.secure;
 
-import lk.ijse.cmjd114_115.MovieBooking.service.secure.AuthService;
 import lk.ijse.cmjd114_115.MovieBooking.dao.UserDao;
 import lk.ijse.cmjd114_115.MovieBooking.dto.enums.Role;
 import lk.ijse.cmjd114_115.MovieBooking.dto.secure.JWTResponseDTO;
@@ -16,6 +15,8 @@ import lk.ijse.cmjd114_115.MovieBooking.exceptions.DuplicateDataException;
 import lk.ijse.cmjd114_115.MovieBooking.util.IDGenerate;
 import lk.ijse.cmjd114_115.MovieBooking.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class AuthServiceIMPL implements AuthService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthServiceIMPL.class);
+
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -39,6 +42,7 @@ public class AuthServiceIMPL implements AuthService {
     @Override
     public void signUp(SignUpDTO signUp) {
         if (userDao.existsByEmail(signUp.getEmail())) {
+            logger.warn("Sign-up rejected: email {} already registered", signUp.getEmail());
             throw new DuplicateDataException("Email already registered");
         }
         UserEntity user = new UserEntity();
@@ -49,6 +53,7 @@ public class AuthServiceIMPL implements AuthService {
         user.setPassword(passwordEncoder.encode(signUp.getPassword()));
         user.setRole(Role.CUSTOMER);
         userDao.save(user);
+        logger.info("New customer registered: {}", signUp.getEmail());
     }
 
     @Override
@@ -58,6 +63,7 @@ public class AuthServiceIMPL implements AuthService {
         UserEntity user = userDao.findByEmail(signIn.getEmail())
                 .orElseThrow(() -> new DataNotFoundException("User not found"));
         String token = jwtUtil.generateToken(user);
+        logger.info("User {} signed in", user.getEmail());
         return new JWTResponseDTO(token, user.getUserId(), user.getEmail(), user.getRole());
     }
 }

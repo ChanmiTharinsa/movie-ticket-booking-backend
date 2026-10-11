@@ -19,6 +19,8 @@ import lk.ijse.cmjd114_115.MovieBooking.exceptions.InvalidRequestException;
 import lk.ijse.cmjd114_115.MovieBooking.service.PaymentService;
 import lk.ijse.cmjd114_115.MovieBooking.util.IDGenerate;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,19 +36,24 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PaymentServiceIMPL implements PaymentService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PaymentServiceIMPL.class);
+
     private final PaymentDao paymentDao;
     private final BookingDao bookingDao;
 
     @Override
     public PaymentDTO processPayment(PaymentRequestDTO request) {
 
+        logger.info("Processing payment for booking {}", request.getBookingId());
+
         BookingEntity booking = bookingDao.findById(request.getBookingId())
                 .orElseThrow(() -> new DataNotFoundException("Booking not found"));
 
         checkOwnerOrAdmin(booking);
 
-       
+        
         if (booking.getStatus() == BookingStatus.CANCELLED) {
+            logger.warn("Payment rejected: booking {} is cancelled", booking.getBookingId());
             throw new InvalidRequestException("Cancelled bookings cannot be paid");
         }
 
@@ -54,6 +61,7 @@ public class PaymentServiceIMPL implements PaymentService {
 
         
         if (payment != null && payment.getStatus() == PaymentStatus.COMPLETED) {
+            logger.warn("Payment rejected: booking {} is already paid", booking.getBookingId());
             throw new InvalidRequestException("Payment is already completed for this booking");
         }
 
@@ -68,14 +76,16 @@ public class PaymentServiceIMPL implements PaymentService {
         payment.setPaymentDate(LocalDateTime.now());
 
         if (request.isSimulateFailure()) {
-            payment.setStatus(PaymentStatus.FAILED);         
+            payment.setStatus(PaymentStatus.FAILED);          
         } else {
             payment.setStatus(PaymentStatus.COMPLETED);
             booking.setStatus(BookingStatus.CONFIRMED);       
             bookingDao.save(booking);
         }
 
-        return toDTO(paymentDao.save(payment));
+        PaymentEntity saved = paymentDao.save(payment);
+        logger.info("Payment {} for booking {} is {}", saved.getPaymentId(), booking.getBookingId(), saved.getStatus());
+        return toDTO(saved);
     }
 
     @Override
@@ -99,6 +109,7 @@ public class PaymentServiceIMPL implements PaymentService {
         boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (!isAdmin && !booking.getUser().getEmail().equals(auth.getName())) {
+            logger.warn("Access denied for {} on booking {}", auth.getName(), booking.getBookingId());
             throw new AccessDeniedException("You can only access your own bookings");
         }
     }
