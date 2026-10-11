@@ -23,6 +23,8 @@ import lk.ijse.cmjd114_115.MovieBooking.exceptions.InvalidRequestException;
 import lk.ijse.cmjd114_115.MovieBooking.service.BookingService;
 import lk.ijse.cmjd114_115.MovieBooking.util.IDGenerate;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,6 +40,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class BookingServiceIMPL implements BookingService {
 
+    private static final Logger logger = LoggerFactory.getLogger(BookingServiceIMPL.class);
+
     private final BookingDao bookingDao;
     private final ShowDao showDao;
     private final UserDao userDao;
@@ -46,12 +50,15 @@ public class BookingServiceIMPL implements BookingService {
     public BookingDTO createBooking(BookingRequestDTO request) {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        logger.info("Creating booking for show {} by {}", request.getShowId(), email);
+
         UserEntity user = userDao.findByEmail(email)
-            .orElseThrow(() -> new DataNotFoundException("User not found"));
+                .orElseThrow(() -> new DataNotFoundException("User not found"));
 
         ShowEntity show = showDao.findById(request.getShowId())
-            .orElseThrow(() -> new DataNotFoundException("Show not found"));
+                .orElseThrow(() -> new DataNotFoundException("Show not found"));
         if (show.getStatus() != ShowStatus.SCHEDULED) {
+            logger.warn("Booking rejected: show {} is {}", show.getShowId(), show.getStatus());
             throw new InvalidRequestException("Cancelled or completed shows cannot be booked");
         }
 
@@ -63,6 +70,7 @@ public class BookingServiceIMPL implements BookingService {
         }
 
         if (bookingDao.existsSeatConflict(show.getShowId(), BookingStatus.CANCELLED, request.getSeatNumbers())) {
+            logger.warn("Seat conflict for show {}: {}", show.getShowId(), request.getSeatNumbers());
             throw new DuplicateDataException("One or more seats are already booked");
         }
 
@@ -78,43 +86,62 @@ public class BookingServiceIMPL implements BookingService {
         booking.setTotalAmount(total);
         booking.setStatus(BookingStatus.PENDING);
 
-        return toDTO(bookingDao.save(booking));
+        BookingEntity saved = bookingDao.save(booking);
+        logger.info("Booking {} created, total {}", saved.getBookingId(), total);
+        return toDTO(saved);
     }
-    
+
     @Override
     public List<BookingDTO> getMyBookings() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return bookingDao.findByUser_Email(email)
-            .stream()
-            .map(this::toDTO)
-            .toList();
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     public List<BookingDTO> getAllBookings() {
         return bookingDao.findAll()
-            .stream()
-            .map(this::toDTO)
-            .toList();
-    }
-    
-    private void checkOwnerOrAdmin(BookingEntity booking) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        if (!isAdmin && !booking.getUser().getEmail().equals(auth.getName())) {
-            throw new AccessDeniedException("You can only access your own bookings");
-        }
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     public BookingDTO getBookingById(String bookingId) {
         BookingEntity booking = bookingDao.findById(bookingId)
-            .orElseThrow(() -> new DataNotFoundException("Booking not found"));
+                .orElseThrow(() -> new DataNotFoundException("Booking not found"));
         checkOwnerOrAdmin(booking);
         return toDTO(booking);
     }
-    
+
+    @Override
+    public BookingDTO cancelBooking(String bookingId) {
+        BookingEntity booking = bookingDao.findById(bookingId)
+                .orElseThrow(() -> new DataNotFoundException("Booking not found"));
+
+        checkOwnerOrAdmin(booking);
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new InvalidRequestException("Booking is already cancelled");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        BookingEntity saved = bookingDao.save(booking);
+        logger.info("Booking {} cancelled", bookingId);
+        return toDTO(saved);
+    }
+
+    private void checkOwnerOrAdmin(BookingEntity booking) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin && !booking.getUser().getEmail().equals(auth.getName())) {
+            logger.warn("Access denied for {} on booking {}", auth.getName(), booking.getBookingId());
+            throw new AccessDeniedException("You can only access your own bookings");
+        }
+    }
 
     private BookingDTO toDTO(BookingEntity b) {
         BookingDTO dto = new BookingDTO();
@@ -127,20 +154,5 @@ public class BookingServiceIMPL implements BookingService {
         dto.setTotalAmount(b.getTotalAmount());
         dto.setStatus(b.getStatus());
         return dto;
-    }
-    
-    @Override
-    public BookingDTO cancelBooking(String bookingId) {
-        BookingEntity booking = bookingDao.findById(bookingId)
-            .orElseThrow(() -> new DataNotFoundException("Booking not found"));
-
-        checkOwnerOrAdmin(booking);
-
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new InvalidRequestException("Booking is already cancelled");
-        }
-
-        booking.setStatus(BookingStatus.CANCELLED);
-        return toDTO(bookingDao.save(booking));
     }
 }
