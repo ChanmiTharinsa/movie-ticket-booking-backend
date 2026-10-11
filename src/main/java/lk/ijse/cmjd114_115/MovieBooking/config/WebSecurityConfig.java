@@ -49,6 +49,8 @@ public class WebSecurityConfig {
                     .hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/bookings").hasRole("ADMIN")
                 .requestMatchers("/api/bookings/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/payments").hasRole("ADMIN")
+                .requestMatchers("/api/payments/**").authenticated()
                 .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
