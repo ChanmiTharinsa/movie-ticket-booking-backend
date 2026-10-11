@@ -49,7 +49,6 @@ public class JWTAuthFilter extends OncePerRequestFilter {
                     }
                 }
             } catch (JwtException | IllegalArgumentException e) {
-                // bad or expired token: carry on as not signed in
             }
         }
         chain.doFilter(request, response);
